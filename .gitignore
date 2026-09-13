@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Expo & Builds
+.expo/
+app/.expo/
+dist/
+web-build/
+*.apk
+*.aab
+
+# Logs & Temp
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+*.log
+
+# Environment & OS
+.env*
+.DS_Store
+Thumbs.db

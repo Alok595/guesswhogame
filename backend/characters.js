@@ -1,0 +1,28 @@
+const CHARACTERS = [
+  { id: 1, name: 'Alex', gender: 'Male', hair: 'Brown', glasses: true, hat: false, facialHair: false, avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Alex&backgroundColor=b6e3f4' },
+  { id: 2, name: 'Sophia', gender: 'Female', hair: 'Blonde', glasses: false, hat: true, facialHair: false, avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Sophia&backgroundColor=ffd5dc' },
+  { id: 3, name: 'Leo', gender: 'Male', hair: 'Black', glasses: false, hat: false, facialHair: true, avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Leo&backgroundColor=c0aede' },
+  { id: 4, name: 'Mia', gender: 'Female', hair: 'Brown', glasses: true, hat: false, facialHair: false, avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Mia&backgroundColor=d1d4f9' },
+  { id: 5, name: 'Oliver', gender: 'Male', hair: 'Blonde', glasses: false, hat: true, facialHair: false, avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Oliver&backgroundColor=ffdfbf' },
+  { id: 6, name: 'Emma', gender: 'Female', hair: 'Red', glasses: false, hat: false, facialHair: false, avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Emma&backgroundColor=ffd5dc' },
+  { id: 7, name: 'Liam', gender: 'Male', hair: 'Brown', glasses: true, hat: true, facialHair: true, avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Liam&backgroundColor=b6e3f4' },
+  { id: 8, name: 'Ava', gender: 'Female', hair: 'Black', glasses: false, hat: false, facialHair: false, avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Ava&backgroundColor=c0aede' },
+  { id: 9, name: 'Noah', gender: 'Male', hair: 'White', glasses: true, hat: false, facialHair: true, avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Noah&backgroundColor=d1d4f9' },
+  { id: 10, name: 'Isabella', gender: 'Female', hair: 'Brown', glasses: false, hat: true, facialHair: false, avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Isabella&backgroundColor=ffdfbf' },
+  { id: 11, name: 'Lucas', gender: 'Male', hair: 'Red', glasses: false, hat: false, facialHair: false, avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Lucas&backgroundColor=b6e3f4' },
+  { id: 12, name: 'Charlotte', gender: 'Female', hair: 'Blonde', glasses: true, hat: false, facialHair: false, avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Charlotte&backgroundColor=ffd5dc' },
+  { id: 13, name: 'Ethan', gender: 'Male', hair: 'Black', glasses: true, hat: false, facialHair: true, avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Ethan&backgroundColor=c0aede' },
+  { id: 14, name: 'Amelia', gender: 'Female', hair: 'Brown', glasses: false, hat: false, facialHair: false, avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Amelia&backgroundColor=d1d4f9' },
+  { id: 15, name: 'Mason', gender: 'Male', hair: 'Brown', glasses: false, hat: true, facialHair: true, avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Mason&backgroundColor=ffdfbf' },
+  { id: 16, name: 'Harper', gender: 'Female', hair: 'White', glasses: true, hat: false, facialHair: false, avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Harper&backgroundColor=ffd5dc' },
+  { id: 17, name: 'Logan', gender: 'Male', hair: 'Blonde', glasses: false, hat: false, facialHair: false, avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Logan&backgroundColor=b6e3f4' },
+  { id: 18, name: 'Evelyn', gender: 'Female', hair: 'Black', glasses: true, hat: true, facialHair: false, avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Evelyn&backgroundColor=c0aede' },
+  { id: 19, name: 'James', gender: 'Male', hair: 'White', glasses: false, hat: true, facialHair: true, avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=James&backgroundColor=d1d4f9' },
+  { id: 20, name: 'Abigail', gender: 'Female', hair: 'Red', glasses: false, hat: false, facialHair: false, avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Abigail&backgroundColor=ffdfbf' },
+  { id: 21, name: 'Benjamin', gender: 'Male', hair: 'Brown', glasses: true, hat: false, facialHair: false, avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Benjamin&backgroundColor=b6e3f4' },
+  { id: 22, name: 'Emily', gender: 'Female', hair: 'Blonde', glasses: false, hat: false, facialHair: false, avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Emily&backgroundColor=ffd5dc' },
+  { id: 23, name: 'Elijah', gender: 'Male', hair: 'Black', glasses: false, hat: true, facialHair: false, avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Elijah&backgroundColor=c0aede' },
+  { id: 24, name: 'Ella', gender: 'Female', hair: 'Brown', glasses: true, hat: true, facialHair: false, avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Ella&backgroundColor=d1d4f9' },
+];
+
+module.exports = CHARACTERS;
