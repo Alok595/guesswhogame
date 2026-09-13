@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 
-const DEFAULT_SERVER_MUSIC = 'http://192.168.31.138:3000/music/bg_music.mp3';
-const ONLINE_FALLBACK_MUSIC = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
+const DEFAULT_SERVER_MUSIC = 'https://guesswhogame.onrender.com/music/bg_music.mp3';
+const ONLINE_FALLBACK_MUSIC = 'https://archive.org/download/satie_gymnopedieI_20251213/satie_gymnopedieI_20251213.mp3';
 
 let ExpoAudioModule: any = null;
 try {

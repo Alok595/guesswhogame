@@ -49,7 +49,7 @@ export interface ClueItem {
 const QUICK_EMOJIS = ['🔥', '😎', '🤔', '😱', '👏', '😂', '👀', '💪', '🎯', '🤫', '🎉', '💯'];
 const QUICK_PHRASES = ['Good luck! 🍀', 'Thinking... 🤔', 'Your turn! 🎯', 'Almost got it! 🔥', 'Nice question! 👌', 'GG! 🏆'];
 
-const DEFAULT_SERVER_URL = 'http://192.168.31.138:3000';
+const DEFAULT_SERVER_URL = 'https://guesswhogame.onrender.com';
 let socket: Socket;
 
 const { width } = Dimensions.get('window');
@@ -2331,6 +2331,8 @@ export default function App() {
       <OnboardingModal
         visible={onboardingVisible}
         onComplete={handleOnboardingComplete}
+        initialProfile={userProfile}
+        onClose={() => setOnboardingVisible(false)}
       />
 
       {/* ========================================================

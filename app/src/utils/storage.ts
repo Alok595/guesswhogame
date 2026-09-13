@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 // Cross-platform resilient storage utility for user profile data
 export interface UserProfile {
   name: string;
-  birthDate: string; // YYYY-MM-DD
+  birthDate?: string; // Optional YYYY-MM-DD
   age: number;
   avatarCharacterId: number;
   avatarUrl: string;

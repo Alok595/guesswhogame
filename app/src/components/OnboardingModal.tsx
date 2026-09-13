@@ -1,16 +1,16 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Modal,
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  FlatList,
   Image,
   StyleSheet,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Dimensions,
 } from 'react-native';
 import { CHARACTERS_LIST, GameItem } from '../constants/categories';
 import { UserProfile } from '../utils/storage';
@@ -18,49 +18,56 @@ import { UserProfile } from '../utils/storage';
 interface OnboardingModalProps {
   visible: boolean;
   onComplete: (profile: UserProfile) => void;
+  initialProfile?: UserProfile | null;
+  onClose?: () => void;
 }
 
-export const OnboardingModal: React.FC<OnboardingModalProps> = ({ visible, onComplete }) => {
-  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
+const { width } = Dimensions.get('window');
 
-  // Profile Form States
-  const [name, setName] = useState('');
-  const [birthYear, setBirthYear] = useState('2000');
-  const [birthMonth, setBirthMonth] = useState('01');
-  const [birthDay, setBirthDay] = useState('01');
+export const OnboardingModal: React.FC<OnboardingModalProps> = ({
+  visible,
+  onComplete,
+  initialProfile,
+  onClose,
+}) => {
+  // Form state: ONLY Name, Age, and Character!
+  const [name, setName] = useState('Detective');
   const [age, setAge] = useState(24);
   const [selectedCharacter, setSelectedCharacter] = useState<GameItem>(CHARACTERS_LIST[0]);
+  const [genderFilter, setGenderFilter] = useState<'all' | 'Male' | 'Female'>('all');
 
-  // Compute suggested age whenever birthYear changes
-  const computedAge = useMemo(() => {
-    const y = parseInt(birthYear, 10);
-    const currentYear = new Date().getFullYear();
-    if (!isNaN(y) && y >= 1940 && y <= currentYear) {
-      return Math.max(5, Math.min(100, currentYear - y));
+  // Sync with initial profile if editing
+  useEffect(() => {
+    if (initialProfile) {
+      if (initialProfile.name) setName(initialProfile.name);
+      if (initialProfile.age) setAge(initialProfile.age);
+      if (initialProfile.avatarCharacterId) {
+        const found = CHARACTERS_LIST.find((c) => c.id === initialProfile.avatarCharacterId);
+        if (found) setSelectedCharacter(found);
+      }
     }
-    return 20;
-  }, [birthYear]);
+  }, [initialProfile, visible]);
 
-  const handleNextFromStep2 = () => {
-    setAge(computedAge);
-    setStep(3);
-  };
+  // Filtered characters list
+  const filteredCharacters = useMemo(() => {
+    if (genderFilter === 'all') return CHARACTERS_LIST;
+    return CHARACTERS_LIST.filter((c) => c.traits.gender === genderFilter);
+  }, [genderFilter]);
 
-  const handleFinalSubmit = () => {
-    const birthDateStr = `${birthYear.padStart(4, '2000')}-${birthMonth.padStart(2, '01')}-${birthDay.padStart(2, '01')}`;
+  const handleSubmit = () => {
+    const cleanName = name.trim() || 'Detective';
     const profile: UserProfile = {
-      name: name.trim() || 'Detective Guest',
-      birthDate: birthDateStr,
-      age: Math.max(5, age),
+      name: cleanName,
+      age: Math.max(5, Math.min(100, age)),
       avatarCharacterId: selectedCharacter.id,
       avatarUrl: selectedCharacter.avatar,
       completed: true,
-      createdAt: new Date().toISOString(),
-      coins: 1000,
-      xp: 0,
-      level: 1,
-      wins: 0,
-      losses: 0,
+      createdAt: initialProfile?.createdAt || new Date().toISOString(),
+      coins: initialProfile?.coins !== undefined ? initialProfile.coins : 1000,
+      xp: initialProfile?.xp || 0,
+      level: initialProfile?.level || 1,
+      wins: initialProfile?.wins || 0,
+      losses: initialProfile?.losses || 0,
     };
     onComplete(profile);
   };
@@ -72,250 +79,193 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ visible, onCom
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={styles.containerCard}>
-          {/* Header Banner */}
+          {/* Header */}
           <View style={styles.header}>
-            <View style={styles.badgePill}>
-              <Text style={styles.badgePillText}>DETECTIVE REGISTRATION</Text>
+            <View style={styles.headerTopRow}>
+              <View style={styles.badgePill}>
+                <Text style={styles.badgePillText}>
+                  {initialProfile ? 'EDIT PROFILE' : 'DETECTIVE REGISTRATION'}
+                </Text>
+              </View>
+              {onClose && initialProfile && (
+                <TouchableOpacity style={styles.closeBtn} onPress={onClose} activeOpacity={0.7}>
+                  <Text style={styles.closeBtnText}>✕</Text>
+                </TouchableOpacity>
+              )}
             </View>
-            <Text style={styles.title}>WELCOME TO GUESS WHO!</Text>
-            <Text style={styles.subtitle}>
-              Set up your official detective identity to enter online duels & match with players.
+            <Text style={styles.title}>
+              {initialProfile ? 'Update Detective Identity' : 'Welcome to Guess Who!'}
             </Text>
-
-            {/* Stepper Progress Bar */}
-            <View style={styles.progressRow}>
-              {[1, 2, 3, 4, 5].map((s) => (
-                <View
-                  key={s}
-                  style={[
-                    styles.progressDot,
-                    step === s && styles.progressDotActive,
-                    step > s && styles.progressDotPassed,
-                  ]}
-                />
-              ))}
-            </View>
+            <Text style={styles.subtitle}>
+              Set your name, age, and signature suspect avatar to duel online.
+            </Text>
           </View>
 
-          {/* STEP 1: NAME */}
-          {step === 1 && (
-            <View style={styles.stepContent}>
-              <Text style={styles.stepIcon}>🕵️‍♂️</Text>
-              <Text style={styles.stepHeading}>What is your Detective Name?</Text>
-              <Text style={styles.stepDesc}>This name will appear on opponent screens during duels.</Text>
-
-              <TextInput
-                style={styles.input}
-                placeholder="e.g. Inspector Holmes"
-                placeholderTextColor="#64748B"
-                value={name}
-                onChangeText={setName}
-                maxLength={20}
-                autoFocus
-              />
-
-              <TouchableOpacity
-                style={[styles.primaryBtn, !name.trim() && styles.disabledBtn]}
-                disabled={!name.trim()}
-                onPress={() => setStep(2)}
-                activeOpacity={0.85}
-              >
-                <Text style={styles.primaryBtnText}>Continue to Date of Birth ➔</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {/* STEP 2: DATE OF BIRTH */}
-          {step === 2 && (
-            <View style={styles.stepContent}>
-              <Text style={styles.stepIcon}>📅</Text>
-              <Text style={styles.stepHeading}>Enter Your Date of Birth</Text>
-              <Text style={styles.stepDesc}>Used to calibrate matchmaking brackets and detective rank.</Text>
-
-              <View style={styles.dateRow}>
-                <View style={styles.dateBlock}>
-                  <Text style={styles.dateLabel}>DAY (DD)</Text>
-                  <TextInput
-                    style={styles.dateInput}
-                    keyboardType="number-pad"
-                    maxLength={2}
-                    placeholder="01"
-                    placeholderTextColor="#64748B"
-                    value={birthDay}
-                    onChangeText={setBirthDay}
-                  />
-                </View>
-
-                <View style={styles.dateBlock}>
-                  <Text style={styles.dateLabel}>MONTH (MM)</Text>
-                  <TextInput
-                    style={styles.dateInput}
-                    keyboardType="number-pad"
-                    maxLength={2}
-                    placeholder="05"
-                    placeholderTextColor="#64748B"
-                    value={birthMonth}
-                    onChangeText={setBirthMonth}
-                  />
-                </View>
-
-                <View style={[styles.dateBlock, { flex: 1.4 }]}>
-                  <Text style={styles.dateLabel}>YEAR (YYYY)</Text>
-                  <TextInput
-                    style={styles.dateInput}
-                    keyboardType="number-pad"
-                    maxLength={4}
-                    placeholder="2000"
-                    placeholderTextColor="#64748B"
-                    value={birthYear}
-                    onChangeText={setBirthYear}
-                  />
-                </View>
-              </View>
-
-              <View style={styles.navRow}>
-                <TouchableOpacity style={styles.backBtn} onPress={() => setStep(1)}>
-                  <Text style={styles.backBtnText}>‹ Back</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.primaryBtn, { flex: 2 }]}
-                  onPress={handleNextFromStep2}
-                  activeOpacity={0.85}
-                >
-                  <Text style={styles.primaryBtnText}>Continue to Age ➔</Text>
-                </TouchableOpacity>
+          <ScrollView
+            style={styles.formScroll}
+            contentContainerStyle={styles.formScrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* 1. NAME INPUT */}
+            <View style={styles.inputSection}>
+              <Text style={styles.sectionLabel}>DETECTIVE NAME</Text>
+              <View style={styles.textInputWrap}>
+                <Text style={styles.inputEmoji}>🕵️</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Enter your name (e.g. Sherlock)"
+                  placeholderTextColor="#64748B"
+                  value={name}
+                  onChangeText={setName}
+                  maxLength={20}
+                  autoCapitalize="words"
+                />
               </View>
             </View>
-          )}
 
-          {/* STEP 3: AGE */}
-          {step === 3 && (
-            <View style={styles.stepContent}>
-              <Text style={styles.stepIcon}>🎂</Text>
-              <Text style={styles.stepHeading}>Confirm Your Age</Text>
-              <Text style={styles.stepDesc}>Calculated from your birth year. Adjust if necessary:</Text>
-
-              <View style={styles.ageSelectorContainer}>
+            {/* 2. AGE SELECTOR */}
+            <View style={styles.inputSection}>
+              <Text style={styles.sectionLabel}>AGE</Text>
+              <View style={styles.ageRow}>
                 <TouchableOpacity
-                  style={styles.ageStepBtn}
-                  onPress={() => setAge((a) => Math.max(5, a - 1))}
+                  style={styles.ageBtn}
+                  onPress={() => setAge((prev) => Math.max(5, prev - 1))}
+                  activeOpacity={0.7}
                 >
-                  <Text style={styles.ageStepBtnText}>−</Text>
+                  <Text style={styles.ageBtnText}>−</Text>
                 </TouchableOpacity>
 
-                <View style={styles.ageDisplayBox}>
-                  <Text style={styles.ageNumber}>{age}</Text>
-                  <Text style={styles.ageLabel}>YEARS OLD</Text>
+                <View style={styles.ageValueBox}>
+                  <Text style={styles.ageValueText}>{age}</Text>
+                  <Text style={styles.ageUnitText}>YEARS OLD</Text>
                 </View>
 
                 <TouchableOpacity
-                  style={styles.ageStepBtn}
-                  onPress={() => setAge((a) => Math.min(100, a + 1))}
+                  style={styles.ageBtn}
+                  onPress={() => setAge((prev) => Math.min(99, prev + 1))}
+                  activeOpacity={0.7}
                 >
-                  <Text style={styles.ageStepBtnText}>+</Text>
+                  <Text style={styles.ageBtnText}>+</Text>
                 </TouchableOpacity>
-              </View>
 
-              <View style={styles.navRow}>
-                <TouchableOpacity style={styles.backBtn} onPress={() => setStep(2)}>
-                  <Text style={styles.backBtnText}>‹ Back</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.primaryBtn, { flex: 2 }]}
-                  onPress={() => setStep(4)}
-                  activeOpacity={0.85}
-                >
-                  <Text style={styles.primaryBtnText}>Pick Signature Avatar ➔</Text>
-                </TouchableOpacity>
+                {/* Quick Age Presets */}
+                <View style={styles.quickAgePresets}>
+                  {[12, 18, 25, 35].map((preset) => (
+                    <TouchableOpacity
+                      key={preset}
+                      style={[
+                        styles.quickPresetBtn,
+                        age === preset && styles.quickPresetBtnActive,
+                      ]}
+                      onPress={() => setAge(preset)}
+                      activeOpacity={0.8}
+                    >
+                      <Text
+                        style={[
+                          styles.quickPresetText,
+                          age === preset && styles.quickPresetTextActive,
+                        ]}
+                      >
+                        {preset}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
             </View>
-          )}
 
-          {/* STEP 4: SIGNATURE CHARACTER CHOICE */}
-          {step === 4 && (
-            <View style={[styles.stepContent, { maxHeight: 380 }]}>
-              <Text style={styles.stepHeading}>Choose Your Detective Avatar</Text>
-              <Text style={styles.stepDesc}>Pick a signature character to represent your profile in matches:</Text>
+            {/* 3. CHARACTER SELECTION (FIXED & BEAUTIFIED) */}
+            <View style={styles.inputSection}>
+              <View style={styles.characterHeaderRow}>
+                <Text style={styles.sectionLabel}>
+                  CHOOSE CHARACTER ({filteredCharacters.length})
+                </Text>
+                {/* Gender Filters */}
+                <View style={styles.filterTabRow}>
+                  {(['all', 'Male', 'Female'] as const).map((filter) => (
+                    <TouchableOpacity
+                      key={filter}
+                      style={[
+                        styles.filterTab,
+                        genderFilter === filter && styles.filterTabActive,
+                      ]}
+                      onPress={() => setGenderFilter(filter)}
+                      activeOpacity={0.7}
+                    >
+                      <Text
+                        style={[
+                          styles.filterTabText,
+                          genderFilter === filter && styles.filterTabTextActive,
+                        ]}
+                      >
+                        {filter === 'all' ? 'All' : filter === 'Male' ? 'Men 🧔' : 'Women 👩'}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
 
-              <FlatList
-                data={CHARACTERS_LIST}
-                keyExtractor={(item) => item.id.toString()}
-                numColumns={4}
-                showsVerticalScrollIndicator={false}
-                style={{ maxHeight: 220, marginVertical: 8 }}
-                renderItem={({ item }) => {
+              {/* Selected Character Active Banner Preview */}
+              <View style={styles.selectedPreviewBanner}>
+                <View style={styles.selectedAvatarWrapper}>
+                  <Image source={{ uri: selectedCharacter.avatar }} style={styles.selectedAvatarImg} />
+                  <View style={styles.selectedCheckBadge}>
+                    <Text style={styles.selectedCheckText}>✓</Text>
+                  </View>
+                </View>
+                <View style={styles.selectedPreviewDetails}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={styles.selectedNameText}>{selectedCharacter.name}</Text>
+                    <View style={styles.signatureBadge}>
+                      <Text style={styles.signatureBadgeText}>YOUR AVATAR</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.selectedTraitsText}>
+                    {selectedCharacter.traits.gender} • {selectedCharacter.traits.hairColor} hair
+                    {selectedCharacter.traits.accessories.length > 0 &&
+                      ` • ${selectedCharacter.traits.accessories.join(', ')}`}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Character Grid */}
+              <View style={styles.characterGrid}>
+                {filteredCharacters.map((item) => {
                   const isSelected = selectedCharacter.id === item.id;
                   return (
                     <TouchableOpacity
-                      style={[styles.avatarTile, isSelected && styles.avatarTileSelected]}
+                      key={item.id}
+                      style={[styles.charCard, isSelected && styles.charCardSelected]}
                       onPress={() => setSelectedCharacter(item)}
-                      activeOpacity={0.7}
+                      activeOpacity={0.75}
                     >
-                      <Image source={{ uri: item.avatar }} style={styles.avatarImg} />
-                      <Text style={styles.avatarName} numberOfLines={1}>
+                      {isSelected && (
+                        <View style={styles.charBadgeCorner}>
+                          <Text style={styles.charBadgeCheck}>✓</Text>
+                        </View>
+                      )}
+                      <Image source={{ uri: item.avatar }} style={styles.charCardImg} />
+                      <Text
+                        style={[styles.charCardName, isSelected && styles.charCardNameSelected]}
+                        numberOfLines={1}
+                      >
                         {item.name}
                       </Text>
                     </TouchableOpacity>
                   );
-                }}
-              />
-
-              <View style={styles.navRow}>
-                <TouchableOpacity style={styles.backBtn} onPress={() => setStep(3)}>
-                  <Text style={styles.backBtnText}>‹ Back</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.primaryBtn, { flex: 2 }]}
-                  onPress={() => setStep(5)}
-                  activeOpacity={0.85}
-                >
-                  <Text style={styles.primaryBtnText}>Review Detective Badge ➔</Text>
-                </TouchableOpacity>
+                })}
               </View>
             </View>
-          )}
+          </ScrollView>
 
-          {/* STEP 5: ID BADGE REVIEW & FINALIZE */}
-          {step === 5 && (
-            <View style={styles.stepContent}>
-              <Text style={styles.stepIcon}>🏅</Text>
-              <Text style={styles.stepHeading}>Detective Badge Ready!</Text>
-              <Text style={styles.stepDesc}>Here is your official player dossier:</Text>
-
-              <View style={styles.badgeCard}>
-                <View style={styles.badgeHeader}>
-                  <Text style={styles.badgeTopText}>GUESS WHO? • DETECTIVE LICENSE</Text>
-                  <Text style={{ fontSize: 16 }}>🔍</Text>
-                </View>
-
-                <View style={styles.badgeBody}>
-                  <Image source={{ uri: selectedCharacter.avatar }} style={styles.badgeAvatar} />
-                  <View style={styles.badgeDetails}>
-                    <Text style={styles.badgeDetectiveName}>{name || 'Detective'}</Text>
-                    <Text style={styles.badgeRole}>Signature Suspect: {selectedCharacter.name}</Text>
-                    <View style={styles.badgeMetaRow}>
-                      <Text style={styles.badgeMeta}>Age: {age}</Text>
-                      <Text style={styles.badgeMeta}>•</Text>
-                      <Text style={styles.badgeMeta}>DOB: {birthYear}-{birthMonth}-{birthDay}</Text>
-                    </View>
-                  </View>
-                </View>
-              </View>
-
-              <View style={styles.navRow}>
-                <TouchableOpacity style={styles.backBtn} onPress={() => setStep(4)}>
-                  <Text style={styles.backBtnText}>‹ Edit</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.confirmBtn, { flex: 2 }]}
-                  onPress={handleFinalSubmit}
-                  activeOpacity={0.85}
-                >
-                  <Text style={styles.confirmBtnText}>ENTER ARENA 🚀</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
+          {/* Bottom Submit Action */}
+          <View style={styles.footer}>
+            <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit} activeOpacity={0.88}>
+              <Text style={styles.submitBtnText}>
+                {initialProfile ? 'SAVE CHANGES ➔' : 'SAVE & START DUELING ➔'}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -325,7 +275,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ visible, onCom
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(5, 11, 24, 0.88)',
+    backgroundColor: 'rgba(5, 8, 16, 0.85)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
@@ -333,309 +283,360 @@ const styles = StyleSheet.create({
   containerCard: {
     width: '100%',
     maxWidth: 440,
+    maxHeight: '92%',
     backgroundColor: '#0F172A',
     borderRadius: 24,
     borderWidth: 1.5,
-    borderColor: '#38BDF8',
-    padding: 20,
+    borderColor: '#38BDF840',
+    overflow: 'hidden',
     shadowColor: '#38BDF8',
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.25,
     shadowRadius: 20,
     elevation: 12,
   },
   header: {
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1E293B',
+    backgroundColor: '#131D33',
+  },
+  headerTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 6,
   },
   badgePill: {
-    backgroundColor: '#0369A1',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginBottom: 8,
+    backgroundColor: '#0369A135',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#0284C7',
+    alignSelf: 'flex-start',
   },
   badgePillText: {
-    color: '#E0F2FE',
+    color: '#38BDF8',
     fontSize: 10,
     fontWeight: '900',
     letterSpacing: 1,
+  },
+  closeBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#1E293B',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  closeBtnText: {
+    color: '#94A3B8',
+    fontSize: 14,
+    fontWeight: '700',
   },
   title: {
     color: '#F8FAFC',
     fontSize: 20,
     fontWeight: '900',
-    textAlign: 'center',
     letterSpacing: 0.5,
   },
   subtitle: {
     color: '#94A3B8',
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: 4,
-    lineHeight: 16,
-  },
-  progressRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 12,
-  },
-  progressDot: {
-    width: 24,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#1E293B',
-  },
-  progressDotActive: {
-    backgroundColor: '#38BDF8',
-    width: 36,
-  },
-  progressDotPassed: {
-    backgroundColor: '#10B981',
-  },
-  stepContent: {
-    alignItems: 'center',
-    paddingTop: 8,
-  },
-  stepIcon: {
-    fontSize: 38,
-    marginBottom: 6,
-  },
-  stepHeading: {
-    color: '#F1F5F9',
-    fontSize: 16,
-    fontWeight: '800',
-    textAlign: 'center',
-  },
-  stepDesc: {
-    color: '#64748B',
-    fontSize: 12,
-    textAlign: 'center',
+    fontSize: 11,
+    fontWeight: '600',
     marginTop: 2,
-    marginBottom: 16,
   },
-  input: {
-    width: '100%',
+  formScroll: {
+    flex: 1,
+  },
+  formScrollContent: {
+    padding: 18,
+    gap: 16,
+  },
+  inputSection: {
+    gap: 8,
+  },
+  sectionLabel: {
+    color: '#94A3B8',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+  textInputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#1E293B',
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1.5,
     borderColor: '#334155',
+    paddingHorizontal: 14,
+    height: 50,
+  },
+  inputEmoji: {
+    fontSize: 20,
+    marginRight: 10,
+  },
+  textInput: {
+    flex: 1,
     color: '#F8FAFC',
     fontSize: 16,
     fontWeight: '700',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 16,
-    textAlign: 'center',
   },
-  dateRow: {
-    flexDirection: 'row',
-    gap: 8,
-    width: '100%',
-    marginBottom: 16,
-  },
-  dateBlock: {
-    flex: 1,
-  },
-  dateLabel: {
-    color: '#94A3B8',
-    fontSize: 10,
-    fontWeight: '800',
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  dateInput: {
-    backgroundColor: '#1E293B',
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: '#334155',
-    color: '#F8FAFC',
-    fontSize: 16,
-    fontWeight: '800',
-    paddingVertical: 10,
-    textAlign: 'center',
-  },
-  ageSelectorContainer: {
+  ageRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-    marginVertical: 16,
+    gap: 10,
   },
-  ageStepBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  ageBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     backgroundColor: '#1E293B',
     borderWidth: 1.5,
-    borderColor: '#38BDF8',
+    borderColor: '#38BDF860',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  ageStepBtnText: {
+  ageBtnText: {
     color: '#38BDF8',
     fontSize: 24,
     fontWeight: '900',
   },
-  ageDisplayBox: {
-    backgroundColor: '#1E3A8A',
-    borderWidth: 2,
-    borderColor: '#60A5FA',
-    borderRadius: 16,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  ageNumber: {
-    color: '#FFFFFF',
-    fontSize: 32,
-    fontWeight: '900',
-  },
-  ageLabel: {
-    color: '#BFDBFE',
-    fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
-  avatarTile: {
-    flex: 1,
-    margin: 4,
-    padding: 6,
-    backgroundColor: '#1E293B',
+  ageValueBox: {
+    minWidth: 80,
+    height: 44,
     borderRadius: 12,
+    backgroundColor: '#1E293B',
     borderWidth: 1.5,
     borderColor: '#334155',
+    justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 12,
   },
-  avatarTileSelected: {
-    borderColor: '#38BDF8',
-    backgroundColor: '#0369A1',
-  },
-  avatarImg: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    marginBottom: 4,
-  },
-  avatarName: {
-    color: '#F8FAFC',
-    fontSize: 9,
-    fontWeight: '800',
-  },
-  badgeCard: {
-    width: '100%',
-    backgroundColor: '#1E293B',
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: '#F59E0B',
-    padding: 12,
-    marginBottom: 16,
-  },
-  badgeHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#334155',
-    paddingBottom: 6,
-    marginBottom: 8,
-  },
-  badgeTopText: {
-    color: '#F59E0B',
-    fontSize: 10,
-    fontWeight: '900',
-    letterSpacing: 0.8,
-  },
-  badgeBody: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  badgeAvatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    borderWidth: 2,
-    borderColor: '#F59E0B',
-  },
-  badgeDetails: {
-    flex: 1,
-  },
-  badgeDetectiveName: {
+  ageValueText: {
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '900',
   },
-  badgeRole: {
-    color: '#38BDF8',
-    fontSize: 12,
-    fontWeight: '700',
-    marginTop: 2,
+  ageUnitText: {
+    color: '#64748B',
+    fontSize: 8,
+    fontWeight: '800',
+    marginTop: -2,
   },
-  badgeMetaRow: {
+  quickAgePresets: {
     flexDirection: 'row',
     gap: 6,
-    marginTop: 4,
-  },
-  badgeMeta: {
-    color: '#94A3B8',
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  navRow: {
-    flexDirection: 'row',
-    gap: 10,
-    width: '100%',
-    marginTop: 8,
-  },
-  backBtn: {
     flex: 1,
+    justifyContent: 'flex-end',
+  },
+  quickPresetBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 10,
     backgroundColor: '#1E293B',
-    borderRadius: 12,
     borderWidth: 1,
     borderColor: '#334155',
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  backBtnText: {
+  quickPresetBtnActive: {
+    backgroundColor: '#0284C730',
+    borderColor: '#38BDF8',
+  },
+  quickPresetText: {
     color: '#94A3B8',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '800',
   },
-  primaryBtn: {
-    width: '100%',
-    backgroundColor: '#0284C7',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#0284C7',
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 4,
+  quickPresetTextActive: {
+    color: '#38BDF8',
   },
-  primaryBtnText: {
+  characterHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  filterTabRow: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  filterTab: {
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    backgroundColor: '#1E293B',
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  filterTabActive: {
+    backgroundColor: '#0284C740',
+    borderColor: '#38BDF8',
+  },
+  filterTabText: {
+    color: '#94A3B8',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  filterTabTextActive: {
+    color: '#38BDF8',
+  },
+  selectedPreviewBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1E293B',
+    borderRadius: 16,
+    padding: 10,
+    borderWidth: 1.5,
+    borderColor: '#38BDF8',
+    gap: 12,
+  },
+  selectedAvatarWrapper: {
+    position: 'relative',
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#0F172A',
+    borderWidth: 2,
+    borderColor: '#38BDF8',
+    overflow: 'visible',
+  },
+  selectedAvatarImg: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+  },
+  selectedCheckBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    backgroundColor: '#10B981',
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#0F172A',
+  },
+  selectedCheckText: {
     color: '#FFFFFF',
-    fontSize: 13,
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  selectedPreviewDetails: {
+    flex: 1,
+  },
+  selectedNameText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '900',
+  },
+  signatureBadge: {
+    backgroundColor: '#10B98125',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#10B981',
+  },
+  signatureBadgeText: {
+    color: '#10B981',
+    fontSize: 8,
     fontWeight: '900',
     letterSpacing: 0.5,
   },
-  disabledBtn: {
-    opacity: 0.4,
+  selectedTraitsText: {
+    color: '#94A3B8',
+    fontSize: 10,
+    fontWeight: '600',
+    marginTop: 2,
   },
-  confirmBtn: {
-    backgroundColor: '#10B981',
-    borderRadius: 12,
-    paddingVertical: 14,
+  characterGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'flex-start',
+    marginTop: 4,
+  },
+  charCard: {
+    width: (width > 440 ? 390 : width - 72) / 4 - 8,
     alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#10B981',
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 6,
+    padding: 6,
+    backgroundColor: '#1E293B',
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#334155',
+    position: 'relative',
   },
-  confirmBtnText: {
+  charCardSelected: {
+    backgroundColor: '#1E3A8A',
+    borderColor: '#38BDF8',
+    elevation: 6,
+    shadowColor: '#38BDF8',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+  },
+  charBadgeCorner: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: '#10B981',
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 2,
+  },
+  charBadgeCheck: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 9,
+    fontWeight: '900',
+  },
+  charCardImg: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: '#0F172A',
+  },
+  charCardName: {
+    color: '#CBD5E1',
+    fontSize: 10,
+    fontWeight: '700',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  charCardNameSelected: {
+    color: '#38BDF8',
+    fontWeight: '900',
+  },
+  footer: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#1E293B',
+    backgroundColor: '#131D33',
+  },
+  submitBtn: {
+    backgroundColor: '#2563EB',
+    paddingVertical: 14,
+    borderRadius: 16,
+    alignItems: 'center',
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: '#3B82F6',
+  },
+  submitBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
     fontWeight: '900',
     letterSpacing: 1,
   },
