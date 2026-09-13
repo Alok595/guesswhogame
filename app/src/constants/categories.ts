@@ -61,6 +61,7 @@ export const CHARACTERS_LIST: GameItem[] = [
   { id: 34, name: 'Victor', avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Victor&backgroundColor=c0aede', traits: { gender: 'Male', hairColor: 'Grey', accessories: ['glasses'], facialHair: ['mustache'] } },
   { id: 35, name: 'Maya', avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Maya&backgroundColor=ffdfbf', traits: { gender: 'Female', hairColor: 'Brown', accessories: ['hat'], facialHair: ['none'] } },
   { id: 36, name: 'Oscar', avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Oscar&backgroundColor=b6e3f4', traits: { gender: 'Male', hairColor: 'Bald', accessories: ['glasses', 'hat'], facialHair: ['beard'] } },
+  { id: 37, name: 'Ravi', avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Ravi&backgroundColor=c0aede', traits: { gender: 'Male', hairColor: 'Black', accessories: ['glasses'], facialHair: ['mustache'] } },
 ];
 
 export const TRAIT_CATEGORIES: TraitCategory[] = [

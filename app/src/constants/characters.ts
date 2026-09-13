@@ -34,4 +34,5 @@ export const CHARACTERS: Character[] = [
   { id: 22, name: 'Emily', gender: 'Female', hair: 'Blonde', glasses: false, hat: false, facialHair: false, avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Emily&backgroundColor=ffd5dc' },
   { id: 23, name: 'Elijah', gender: 'Male', hair: 'Black', glasses: false, hat: true, facialHair: false, avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Elijah&backgroundColor=c0aede' },
   { id: 24, name: 'Ella', gender: 'Female', hair: 'Brown', glasses: true, hat: true, facialHair: false, avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Ella&backgroundColor=d1d4f9' },
+  { id: 25, name: 'Priya', gender: 'Female', hair: 'Black', glasses: false, hat: false, facialHair: false, avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Priya&backgroundColor=ffd5dc' },
 ];
